@@ -6,6 +6,8 @@ import (
 	"strconv"
 )
 
+var snippet interface{}
+
 func home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -21,13 +23,14 @@ func jsonview(w http.ResponseWriter, r *http.Request) {
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil || id < 1 {
-		http.NotFound(w, r)
-		return
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+
+	if id != 0 {
+		snippet = snippet_model.Get(id)
+	} else {
+		snippet, _ = snippet_model.GetAll()
 	}
 
-	snippet := snippet_model.Get(id)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snippet)
 

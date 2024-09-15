@@ -43,3 +43,27 @@ func (repo *DBModel) Get(id int) *Snippet {
 	}
 	return &snippet
 }
+
+func (repo *DBModel) GetAll() ([]Snippet, error) {
+	var snippets []Snippet
+
+	rows, err := repo.db.Query(context.Background(), "SELECT * FROM admin_app_snippet")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var snippet Snippet
+		if err := rows.Scan(&snippet.ID, &snippet.Title, &snippet.Content, &snippet.Created, &snippet.Expires); err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, snippet)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
+}
