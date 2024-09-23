@@ -1,19 +1,20 @@
 package repository
 
 import (
-	"context"
+	"fmt"
 	"log"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Snippet struct {
-	ID      int
-	Title   string
-	Content string
-	Created time.Time
-	Expires time.Time
+	ID      int       `json:"id" gorm:"primaryKey"`
+	Title   string    `json:"title"`
+	Content string    `json:"content"`
+	Created time.Time `json:"created"`
+	Expires time.Time `json:"expires"`
 }
 
 type SnippetForm struct {
@@ -23,46 +24,36 @@ type SnippetForm struct {
 }
 
 type DBModel struct {
-	db *pgxpool.Pool
+	db *gorm.DB
 }
 
 func ConnectDB(db_url string) *DBModel {
-	db, err := pgxpool.New(context.Background(), db_url)
+	db, err := gorm.Open(postgres.Open(db_url), &gorm.Config{})
+
 	if err != nil {
-		log.Fatal("Error opening database connection:", err)
+		log.Fatalln(err)
 	}
+
+	db.AutoMigrate(&Snippet{})
+
 	return &DBModel{db: db}
 }
 
 // This will return a specific snippet based on its id.
 func (repo *DBModel) Get(id int) *Snippet {
 	var snippet Snippet
-	err := repo.db.QueryRow(context.Background(), "SELECT * FROM admin_app_snippet WHERE id=$1", id).Scan(&snippet.ID, &snippet.Title, &snippet.Content, &snippet.Created, &snippet.Expires)
-	if err != nil {
-		log.Fatal("Error fetching data:", err)
+	if result := repo.db.First(&snippet, id); result.Error != nil {
+		fmt.Println(result.Error)
 	}
+	fmt.Print(&snippet)
 	return &snippet
 }
 
 func (repo *DBModel) GetAll() ([]Snippet, error) {
 	var snippets []Snippet
 
-	rows, err := repo.db.Query(context.Background(), "SELECT * FROM admin_app_snippet")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var snippet Snippet
-		if err := rows.Scan(&snippet.ID, &snippet.Title, &snippet.Content, &snippet.Created, &snippet.Expires); err != nil {
-			return nil, err
-		}
-		snippets = append(snippets, snippet)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
+	if result := repo.db.Find(&snippets); result.Error != nil {
+		fmt.Println(result.Error)
 	}
 
 	return snippets, nil
