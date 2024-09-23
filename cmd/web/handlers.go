@@ -23,9 +23,10 @@ func jsonview(w http.ResponseWriter, r *http.Request) {
 }
 
 func snippetView(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	id := r.URL.Query().Get("id")
 
-	if id != 0 {
+	if id != "" {
+		id, _ := strconv.Atoi(id)
 		snippet = snippet_model.Get(id)
 	} else {
 		snippet, _ = snippet_model.GetAll()
