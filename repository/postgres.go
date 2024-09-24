@@ -7,6 +7,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"mashiat.snippetbox.test/config"
 )
 
 type Snippet struct {
@@ -17,42 +18,38 @@ type Snippet struct {
 	Expires time.Time `json:"expires"`
 }
 
-type SnippetForm struct {
-	Title   string
-	Content string
-	Expires int
+type DB struct {
+	*gorm.DB
 }
 
-type DBModel struct {
-	db *gorm.DB
+// New creates a new DB instance
+func New(db *gorm.DB) *DB {
+	return &DB{db}
 }
 
-func ConnectDB(db_url string) *DBModel {
-	db, err := gorm.Open(postgres.Open(db_url), &gorm.Config{})
+func Init(config *config.Config) *gorm.DB {
+	db, err := gorm.Open(postgres.Open(config.DB_URL), &gorm.Config{})
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	db.AutoMigrate(&Snippet{})
-
-	return &DBModel{db: db}
+	return db
 }
 
 // This will return a specific snippet based on its id.
-func (repo *DBModel) Get(id int) *Snippet {
+func (r *DB) Get(id int) *Snippet {
 	var snippet Snippet
-	if result := repo.db.First(&snippet, id); result.Error != nil {
+	if result := r.First(&snippet, id); result.Error != nil {
 		fmt.Println(result.Error)
 	}
-	fmt.Print(&snippet)
 	return &snippet
 }
 
-func (repo *DBModel) GetAll() ([]Snippet, error) {
+func (r *DB) GetAll() ([]Snippet, error) {
 	var snippets []Snippet
 
-	if result := repo.db.Find(&snippets); result.Error != nil {
+	if result := r.Find(&snippets); result.Error != nil {
 		fmt.Println(result.Error)
 	}
 

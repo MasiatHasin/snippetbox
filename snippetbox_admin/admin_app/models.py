@@ -8,6 +8,9 @@ class Snippet(models.Model):
     content = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now())
     expires_at = models.DateTimeField()
+    
+    class Meta:
+        db_table = "snippets"
 
     def __str__(self) -> str:
         return f"{self.id}: {self.title} => {self.content[:100]}"

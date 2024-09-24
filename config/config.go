@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"log"
@@ -12,7 +12,7 @@ type Config struct {
 	DB_URL string
 }
 
-func loadConfig() *Config {
+func LoadConfig() *Config {
 	// Load .env file
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatal("Error loading configuration:", err)

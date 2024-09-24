@@ -4,23 +4,21 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+	"mashiat.snippetbox.test/config"
 	"mashiat.snippetbox.test/repository"
 )
 
-var snippet_model *repository.DBModel
-
 func main() {
-	config := loadConfig()
+	cfg := config.LoadConfig()
+	db := repository.Init(cfg)
+	repo := repository.New(db)
+	h := New(repo)
+	r := chi.NewRouter()
 
-	snippet_model = repository.ConnectDB(config.DB_URL)
+	r.Get("/snippet/view", h.snippetView)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/jsonview", jsonview)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
-
-	log.Printf("Starting server on %s", config.Port)
-	err := http.ListenAndServe(config.Port, mux)
+	log.Printf("Starting server on %s", cfg.Port)
+	err := http.ListenAndServe(cfg.Port, r)
 	log.Fatal(err)
 }

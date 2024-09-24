@@ -5,6 +5,7 @@ go 1.23.1
 require github.com/joho/godotenv v1.5.1
 
 require (
+	github.com/go-chi/chi/v5 v5.1.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
