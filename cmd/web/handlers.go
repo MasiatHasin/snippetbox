@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -19,20 +21,6 @@ func New(repo *repository.DB) *Handler {
 	return &Handler{repo}
 }
 
-/* func home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	w.Write([]byte("Hello from Snippetbox"))
-}
-
-func jsonview(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-	rawJSON := `{"status":"success", "message":"This is a raw JSON string response"}`
-	w.Write([]byte(rawJSON))
-} */
-
 func (h Handler) snippetView(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 
@@ -40,7 +28,7 @@ func (h Handler) snippetView(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.Atoi(id)
 		snippet = h.Repo.Get(id)
 	} else {
-		snippet, _ = h.Repo.GetAll()
+		snippet = h.Repo.GetAll()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -48,13 +36,22 @@ func (h Handler) snippetView(w http.ResponseWriter, r *http.Request) {
 
 }
 
-/* func snippetCreate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		w.Header().Add("Content-Type", "application/json")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
+func (h Handler) snippetCreate(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	w.Write([]byte("Create a new snippet..."))
-} */
+	snippet, err = h.Repo.Create(body)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		message := `{"Error": "There has been an error"}`
+		w.Write([]byte(message))
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(snippet)
+	}
+
+}

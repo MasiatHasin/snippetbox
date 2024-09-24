@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -17,7 +18,8 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Get("/snippet/view", h.snippetView)
-
+	r.Post("/snippet/create", h.snippetCreate)
+	fmt.Println("Route registered: POST /snippet/create")
 	log.Printf("Starting server on %s", cfg.Port)
 	err := http.ListenAndServe(cfg.Port, r)
 	log.Fatal(err)
