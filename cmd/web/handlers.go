@@ -1,12 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"mashiat.snippetbox.test/repository"
 )
 
@@ -21,37 +20,97 @@ func New(repo *repository.DB) *Handler {
 	return &Handler{repo}
 }
 
-func (h Handler) snippetView(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
+func (h Handler) snippetView(c *gin.Context) {
+	id := c.Query("id")
+	var err string
 
 	if id != "" {
 		id, _ := strconv.Atoi(id)
-		snippet = h.Repo.Get(id)
+		snippet, err = h.Repo.Get(id)
 	} else {
-		snippet = h.Repo.GetAll()
+		//snippet, err = h.Repo.GetAll()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "parameter 'id' not found"})
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(snippet)
+	if err != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"data": snippet})
+	}
 
 }
 
-func (h Handler) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
+func (h Handler) snippetViewAll(c *gin.Context) {
+	var err string
 
-	if err != nil {
-		log.Fatalln(err)
+	snippet, err = h.Repo.GetAll()
+
+	if err != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"data": snippet})
 	}
 
-	snippet, err = h.Repo.Create(body)
+}
+
+func (h Handler) snippetCreate(c *gin.Context) {
+
+	body, _ := io.ReadAll(c.Request.Body)
+
+	snippet, err := h.Repo.Create(body)
+
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		message := `{"Error": "There has been an error"}`
-		w.Write([]byte(message))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "There has been an error"})
 	} else {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(snippet)
+		c.JSON(http.StatusOK, gin.H{"data": snippet})
+	}
+
+}
+
+func (h Handler) snippetUpdate(c *gin.Context) {
+	body, _ := io.ReadAll(c.Request.Body)
+	id := c.Query("id")
+	var err string
+	var id_num int
+
+	if id != "" {
+		id_num, _ = strconv.Atoi(id)
+		snippet, err = h.Repo.Get(id_num)
+	} else {
+		//snippet, err = h.Repo.GetAll()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "parameter 'id' not found"})
+		return
+	}
+
+	if err != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+	} else {
+		snippet, _ := h.Repo.Update(body, id_num)
+		c.JSON(http.StatusOK, gin.H{"data": snippet})
+	}
+
+}
+
+func (h Handler) snippetDelete(c *gin.Context) {
+	id := c.Query("id")
+	var err string
+	var id_num int
+
+	if id != "" {
+		id_num, _ = strconv.Atoi(id)
+		snippet, err = h.Repo.Get(id_num)
+	} else {
+		//snippet, err = h.Repo.GetAll()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "parameter 'id' not found"})
+		return
+	}
+
+	if err != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+	} else {
+		h.Repo.Delete(id_num)
+		c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 	}
 
 }
